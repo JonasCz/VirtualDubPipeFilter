@@ -44,6 +44,8 @@ This works with `lag=1`.
 
 ## Example: QTGMC deinterlacing via AviSynth+
 
+The use case for this is to be able to run a VirtualDub filter _before_ QTGMC (in my case the filter is NeatVideo), without having to create an intermediate file & doing it in two passes.
+
 See [`qtgmc_pipe.bat`](qtgmc_pipe.bat) and [`qtgmc.avs`](qtgmc.avs).
 
 The pipeline chains three processes:
