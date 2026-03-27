@@ -51,6 +51,7 @@ INT_PTR PipeFilterDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) {
         SetDlgItemTextA(mhdlg, IDC_COMMAND, mConfig.command.c_str());
         SendDlgItemMessage(mhdlg, IDC_LAG_SPIN, UDM_SETRANGE32, 1, 120);
         SetDlgItemInt(mhdlg, IDC_LAG, mConfig.lag, FALSE);
+        CheckDlgButton(mhdlg, IDC_DOUBLE_FRAMERATE, mConfig.doubleFramerate ? BST_CHECKED : BST_UNCHECKED);
         return TRUE;
 
     case WM_COMMAND:
@@ -60,6 +61,7 @@ INT_PTR PipeFilterDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) {
             GetDlgItemTextA(mhdlg, IDC_COMMAND, buf, sizeof(buf));
             mConfig.command = buf;
             mConfig.lag = (std::max)(1, (int)GetDlgItemInt(mhdlg, IDC_LAG, NULL, FALSE));
+            mConfig.doubleFramerate = IsDlgButtonChecked(mhdlg, IDC_DOUBLE_FRAMERATE) == BST_CHECKED;
             EndDialog(mhdlg, TRUE);
             return TRUE;
         }
@@ -82,7 +84,7 @@ PipeFilter::PipeFilter(const PipeFilter& other) : mConfig(other.mConfig) {}
 PipeFilter::~PipeFilter() {}
 
 VDXVF_BEGIN_SCRIPT_METHODS(PipeFilter)
-VDXVF_DEFINE_SCRIPT_METHOD(PipeFilter, ScriptConfig, "si")
+VDXVF_DEFINE_SCRIPT_METHOD(PipeFilter, ScriptConfig, "sii")
 VDXVF_END_SCRIPT_METHODS()
 
 uint32 PipeFilter::GetParams() {
@@ -96,13 +98,22 @@ uint32 PipeFilter::GetParams() {
         }
     }
     fa->dst.offset = fa->src.offset;
-    return FILTERPARAM_SWAP_BUFFERS | FILTERPARAM_SUPPORTS_ALTFORMATS | FILTERPARAM_HAS_LAG(mConfig.lag);
+
+    if (mConfig.doubleFramerate) {
+        fa->dst.mFrameRateHi = fa->src.mFrameRateHi * 2;
+        fa->dst.mFrameRateLo = fa->src.mFrameRateLo;
+        fa->dst.mFrameCount = fa->src.mFrameCount * 2;
+    }
+
+    int effectiveLag = mConfig.doubleFramerate ? mConfig.lag * 2 : mConfig.lag;
+    return FILTERPARAM_SWAP_BUFFERS | FILTERPARAM_SUPPORTS_ALTFORMATS | FILTERPARAM_HAS_LAG(effectiveLag);
 }
 
 void PipeFilter::Start() {
     mWidth = fa->src.w;
     mHeight = fa->src.h;
     mFramesFed = 0;
+    mOutputFrameCount = 0;
     mFrameQueue.Reset();
 
     std::string cmdline = SubstituteCommand(mWidth, mHeight, fa->src.mFrameRateHi, fa->src.mFrameRateLo);
@@ -114,11 +125,14 @@ void PipeFilter::Run() {
     const int h = mHeight;
     const int rowBytes = w * 4;
 
-    WriteFrame(fa->src.data, fa->src.pitch, w, h);
-    mFramesFed++;
+    bool shouldWrite = !mConfig.doubleFramerate || (mOutputFrameCount % 2 == 0);
+    if (shouldWrite) {
+        WriteFrame(fa->src.data, fa->src.pitch, w, h);
+        mFramesFed++;
+    }
+    mOutputFrameCount++;
 
     if (mFramesFed <= mConfig.lag) {
-        // External process is still buffering; output a black frame.
         uint8_t *dst = (uint8_t *)fa->dst.data;
         ptrdiff_t dstPitch = fa->dst.pitch;
         for (int y = 0; y < h; y++) {
@@ -135,7 +149,6 @@ void PipeFilter::Run() {
 
     uint8_t *dst = (uint8_t *)fa->dst.data;
     ptrdiff_t dstPitch = fa->dst.pitch;
-    // Frame data is top-down; VDX bitmap data ptr is bottom-left with pitch going up.
     for (int y = 0; y < h; y++) {
         memcpy(dst + (ptrdiff_t)(h - 1 - y) * dstPitch, frame.data() + (size_t)y * rowBytes, rowBytes);
     }
@@ -150,6 +163,12 @@ bool PipeFilter::Configure(VDXHWND hwnd) {
     return dlg.Show((HWND)hwnd);
 }
 
+sint64 PipeFilter::Prefetch(sint64 frame) {
+    if (mConfig.doubleFramerate)
+        return frame >> 1;
+    return frame;
+}
+
 void PipeFilter::GetSettingString(char *buf, int maxlen) {
     if (mConfig.command.empty()) {
         SafePrintf(buf, maxlen, " (no command)");
@@ -157,7 +176,10 @@ void PipeFilter::GetSettingString(char *buf, int maxlen) {
         std::string display = mConfig.command;
         if (display.size() > 40)
             display = display.substr(0, 37) + "...";
-        SafePrintf(buf, maxlen, " (%s, lag=%d)", display.c_str(), mConfig.lag);
+        if (mConfig.doubleFramerate)
+            SafePrintf(buf, maxlen, " (%s, lag=%d, 2x fps)", display.c_str(), mConfig.lag);
+        else
+            SafePrintf(buf, maxlen, " (%s, lag=%d)", display.c_str(), mConfig.lag);
     }
 }
 
@@ -169,12 +191,13 @@ void PipeFilter::GetScriptString(char *buf, int maxlen) {
             escaped += '\\';
         escaped += c;
     }
-    SafePrintf(buf, maxlen, "Config(\"%s\", %d)", escaped.c_str(), mConfig.lag);
+    SafePrintf(buf, maxlen, "Config(\"%s\", %d, %d)", escaped.c_str(), mConfig.lag, mConfig.doubleFramerate ? 1 : 0);
 }
 
 void PipeFilter::ScriptConfig(IVDXScriptInterpreter *isi, const VDXScriptValue *argv, int argc) {
     mConfig.command = *argv[0].asString();
     mConfig.lag = (std::max)(1, argv[1].asInt());
+    mConfig.doubleFramerate = argv[2].asInt() != 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

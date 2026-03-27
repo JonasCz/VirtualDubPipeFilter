@@ -14,6 +14,7 @@
 struct PipeFilterConfig {
     std::string command;
     int lag = 1;
+    bool doubleFramerate = false;
 };
 
 class FrameQueue {
@@ -54,6 +55,7 @@ public:
     virtual bool Configure(VDXHWND hwnd);
     virtual void GetSettingString(char *buf, int maxlen);
     virtual void GetScriptString(char *buf, int maxlen);
+    virtual sint64 Prefetch(sint64 frame);
 
     VDXVF_DECLARE_SCRIPT_METHODS();
 
@@ -76,6 +78,7 @@ private:
 
     FrameQueue mFrameQueue;
     int mFramesFed = 0;
+    int mOutputFrameCount = 0;
     int mWidth = 0;
     int mHeight = 0;
 };
