@@ -28,7 +28,7 @@ size and format to stdout for every frame it receives.
 - **Buffer frames (lag)** -- if the external command buffers more frames internally
   before producing output (e.g. temporal filters), set this to the number of buffered frames.
 
-  To set this value, increase it until VirtualDub doesn't hang.
+  To set this value, increase it until VirtualDub doesn't hang or crash when you start playback.
 
   Minimum 1.
 
@@ -58,27 +58,33 @@ PipeFilter stdin (raw BGRA)
 -> PipeFilter stdout
 ```
 
-In the PipeFilter **Command** field enter the full path to the batch file:
+In the PipeFilter **Command** field enter the full path to the batch file, e.g.:
 
 ```
 "C:\Users\Jonas\Desktop\VirtualDub2-src\VirtualDubPipeFilter\qtgmc_pipe.bat" %(width) %(height) %(fpsnum) %(fpsden)
 ```
 
 **Requirements:** `ffmpeg` and `avs2yuv` in PATH, AviSynth+ installed, plus the
-RawSourcePlus and QTGMC (mvtools2 + havsfunc) plugins. See comments inside
+RawSourcePlus and QTGMC plugins. See comments inside
 `qtgmc_pipe.bat` for download links.
 
-**Field order:** Edit `qtgmc.avs` and change `AssumeTFF()` to `AssumeBFF()` if
-your source is Bottom Field First (SD/NTSC/DV content).
+**Field order:** Edit `qtgmc.avs` and change `AssumeTFF()` to `AssumeBFF()` according to 
+your source is Bottom Field First (SD/DV content).
 
 **Frame rate note:** `FPSDivisor=1` makes QTGMC output one progressive frame per field, doubling the frame rate. 
 Check "This command doubles framerate" to use this mode. If you use FPSDivisor 2, then leave leave it off.
 
 **Buffer frames (lag)** QTGMC preset "Slower" needs `8`, "Fast" needs `5`.
 
+## Download
+
+https://github.com/JonasCz/VirtualDubPipeFilter/releases/tag/v0.1
+
+and place `PipeFilter.vdf` into your `VirtualDub2\plugins64` directory. 64bit only, no 32bit or ARM.
+
 ## Building
 
-Requires CMake and Visual Studio 2022 Build Tools (probably other versions will also work). Edit `build.cmd` to add the right paths for your setup, and then run it.
+Requires CMake and Visual Studio 2022 Build Tools (possibly other versions will also work). Edit `build.cmd` to add the right paths for your setup, and then run it.
 VirtualDub2 plugins directory.
 
 Download VDPluginSDK-1.2.zip from https://sourceforge.net/p/vdfiltermod/wiki/sdk/ and extract its contents into a directory named VDPluginSDK-1.2 next to the VirtualDubPipeFilter (this repository) directory.
@@ -88,3 +94,5 @@ Then run.
 ```
 build.cmd
 ```
+
+Which will also copy the `PipeFilter.vdf` to your `plugins64` directory.
