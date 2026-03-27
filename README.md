@@ -5,6 +5,8 @@ command's stdin and reads processed frames back from its stdout. This lets you
 use any command-line tool (FFmpeg, ImageMagick, custom scripts, etc.) as a
 VirtualDub2 filter.
 
+![screenshot.jpg](screenshot.jpg)
+
 ## How it works
 
 Each frame is sent as raw BGRA pixels (top-down, no header) to the external
