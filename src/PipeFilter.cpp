@@ -49,7 +49,7 @@ INT_PTR PipeFilterDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_INITDIALOG:
         mOldConfig = mConfig;
         SetDlgItemTextA(mhdlg, IDC_COMMAND, mConfig.command.c_str());
-        SendDlgItemMessage(mhdlg, IDC_LAG_SPIN, UDM_SETRANGE32, 0, 120);
+        SendDlgItemMessage(mhdlg, IDC_LAG_SPIN, UDM_SETRANGE32, 1, 120);
         SetDlgItemInt(mhdlg, IDC_LAG, mConfig.lag, FALSE);
         return TRUE;
 
@@ -59,7 +59,7 @@ INT_PTR PipeFilterDialog::DlgProc(UINT msg, WPARAM wParam, LPARAM lParam) {
             char buf[4096] = {};
             GetDlgItemTextA(mhdlg, IDC_COMMAND, buf, sizeof(buf));
             mConfig.command = buf;
-            mConfig.lag = (int)GetDlgItemInt(mhdlg, IDC_LAG, NULL, FALSE);
+            mConfig.lag = (std::max)(1, (int)GetDlgItemInt(mhdlg, IDC_LAG, NULL, FALSE));
             EndDialog(mhdlg, TRUE);
             return TRUE;
         }
@@ -174,7 +174,7 @@ void PipeFilter::GetScriptString(char *buf, int maxlen) {
 
 void PipeFilter::ScriptConfig(IVDXScriptInterpreter *isi, const VDXScriptValue *argv, int argc) {
     mConfig.command = *argv[0].asString();
-    mConfig.lag = argv[1].asInt();
+    mConfig.lag = (std::max)(1, argv[1].asInt());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

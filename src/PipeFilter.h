@@ -13,7 +13,7 @@
 
 struct PipeFilterConfig {
     std::string command;
-    int lag = 0;
+    int lag = 1;
 };
 
 class FrameQueue {
