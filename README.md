@@ -32,7 +32,7 @@ size and format to stdout for every frame it receives.
 
   Minimum 1.
 
-- **Command**: use for programs that output 2 frames for every 1 frame in. (Deinterlacers)
+- **"This command doubles framerate**: use for programs that output 2 frames for every 1 frame in. (Deinterlacers)
 
 ## Example: FFmpeg negate filter
 
