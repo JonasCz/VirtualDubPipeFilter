@@ -40,7 +40,7 @@ size and format to stdout for every frame it receives.
 ffmpeg -f rawvideo -pix_fmt bgra -s %(width)x%(height) -r %(fpsnum)/%(fpsden) -i pipe:0 -vf negate -f rawvideo -pix_fmt bgra pipe:1
 ```
 
-This works with `lag=1`. `ffmpeg` needs to be in your path.
+This works with `lag=1`. `ffmpeg` needs to be in your PATH.
 
 ## Example: QTGMC deinterlacing via AviSynth+
 
