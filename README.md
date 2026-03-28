@@ -84,6 +84,13 @@ A broken command which doesn't output frames will crash or hang virtualdub. You 
 
 where the middle command (here: qtgmc_pipe.bat) is what you would put in the filter command option, which will show you the output and see what's wrong.
 
+## Performance:
+
+`ffmpeg` (no filters, just pass video back out) runs at around 40fps (on slightly old but good CPU, 5950x) with lag=1. With lag=5 it's faster (not sure why?)
+QTGMC with quality "draft" runs around 60fps (input fps I think?).
+
+So there is possibly some performance enhancement to be had.
+
 ## Download
 
 https://github.com/JonasCz/VirtualDubPipeFilter/releases/tag/v0.1
