@@ -76,6 +76,14 @@ Check "This command doubles framerate" to use this mode. If you use FPSDivisor 2
 
 **Buffer frames (lag)** QTGMC preset "Slower" needs `8`, "Fast" needs `5`.
 
+## Debugging
+
+A broken command which doesn't output frames will crash or hang virtualdub. You can debug this by:
+
+`ffmpeg -hide_banner -i "test_input.mp4" -t 5 -f rawvideo -pix_fmt bgra - | "C:\Users\Jonas\Desktop\VirtualDub2-src\VirtualDubPipeFilter\qtgmc_pipe.bat" 1440 1080 25 1 | ffmpeg -hide_banner -f rawvideo -pix_fmt bgra -s 1440x1080 -r 50 -i - -y test_out.mp4`
+
+where the middle command (here: qtgmc_pipe.bat) is what you would put in the filter command option, which will show you the output and see what's wrong.
+
 ## Download
 
 https://github.com/JonasCz/VirtualDubPipeFilter/releases/tag/v0.1
